@@ -207,7 +207,8 @@ class giftcards extends DES
         }
         if ($check_rs[0][1] < $data['amount'])
         {
-            $this->message(false, $check_rs[0][1]);    //退款金额超过该小票总消费金额
+//            $this->message(false, $check_rs[0][1]);    //退款金额超过该小票总消费金额
+            $this->message(false, 5);
         }
         if ($check_rs[0][1] <= $check_rs[1][1])
         {
@@ -266,6 +267,23 @@ class giftcards extends DES
         }
 
         $this->refund_log($ok_arr);
+
+        if (!empty($data['rollback']))  //撤销用
+        {
+            $sql = 'SELECT sn,balance FROM oneshop_giftcards WHERE';
+            foreach ($ok_arr as $k => $val)
+            {
+                $sql .= ' sn=\'' . $k . '\' OR';
+            }
+            $sql = rtrim($sql, 'OR');
+            $new_balance = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($new_balance as $v)
+            {
+                $ok_arr[$v['SN']] .= ' ' . $v['BALANCE'];
+            }
+        }
+
         $this->message(true, json_encode($ok_arr));
     }
 
@@ -312,6 +330,79 @@ class giftcards extends DES
                 $this->message(false, 1);    //校验码已存在
                 break;
         }
+    }
+
+    /**
+     * @remark 打印确认
+     */
+    public function print_confirm()
+    {
+        $data = $this->transform();
+
+        $sql = 'UPDATE oneshop_gcardsuselog SET printed=\'1\',printtime=\'' . time() . '\' WHERE ordersn=\'' . $this->_orderId . '\' AND jcdkhid=\'' . $this->_jcdhkId . '\' AND posid=\'' . $this->_posId . '\'';
+        try
+        {
+            $this->db->beginTransaction();
+            $this->db->exec($sql);
+            $this->db->commit();
+        }
+        catch (Exception $ex)
+        {
+            $this->db->rollBack();
+            $data['ex'] = $ex->getMessage();
+            $this->warning(__FUNCTION__, $data);
+        }
+    }
+
+    /**
+     * @remark 补打小票
+     */
+    public function print_again()
+    {
+        $data = $this->transform();
+        $return_data = array();
+
+        switch ($data['type'])
+        {
+            case 1:
+                $description = '实体店刷卡消费';
+                break;
+            case 0:
+                $description = '实体店退款';
+                break;
+            default:
+                $this->warning(__FUNCTION__, $data);
+                exit();
+        }
+        $sql = 'SELECT g.sn,g.balance,l.amount FROM oneshop_gcardsuselog l,oneshop_giftcards g WHERE l.giftcardssn=g.sn AND l.printed=0 AND l.ordersn=\'' . $this->_orderId . '\' AND l.jcdkhid=\'' . $this->_jcdhkId . '\' AND l.description=\'' . $description . '\'';
+        $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$result)
+        {
+            $this->message(false, 1);
+        }
+
+        switch ($data['type'])
+        {
+            case 1:
+                foreach ($result as $value)
+                {
+//                    $return_data[$value['SN']] = $value['BALANCE'] + $value['AMOUNT'];  //上期余额
+                    $return_data[$value['SN']] .= ' ' . $value['AMOUNT'];   //本次消费额
+                    $return_data[$value['SN']] .= ' ' . $value['BALANCE'];  //当前余额
+                }
+                break;
+
+            case 0:
+                foreach ($result as $value)
+                {
+                    $return_data[$value['SN']] = $value['AMOUNT'];   //本次退款额
+                    $return_data[$value['SN']] .= ' ' . $value['BALANCE'];  //当前余额
+                }
+                break;
+        }
+
+        $this->message(true, json_encode($return_data));
     }
 
     /**
