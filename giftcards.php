@@ -43,7 +43,7 @@ class giftcards extends DES
         }
 
         $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        parent::DES('fc3ff98e');
     }
 
     public function __destruct()
@@ -333,28 +333,6 @@ class giftcards extends DES
     }
 
     /**
-     * @remark 打印确认
-     */
-    public function print_confirm()
-    {
-        $data = $this->transform();
-
-        $sql = 'UPDATE oneshop_gcardsuselog SET printed=\'1\',printtime=\'' . time() . '\' WHERE ordersn=\'' . $this->_orderId . '\' AND jcdkhid=\'' . $this->_jcdhkId . '\' AND posid=\'' . $this->_posId . '\'';
-        try
-        {
-            $this->db->beginTransaction();
-            $this->db->exec($sql);
-            $this->db->commit();
-        }
-        catch (Exception $ex)
-        {
-            $this->db->rollBack();
-            $data['ex'] = $ex->getMessage();
-            $this->warning(__FUNCTION__, $data);
-        }
-    }
-
-    /**
      * @remark 补打小票
      */
     public function print_again()
@@ -374,7 +352,7 @@ class giftcards extends DES
                 $this->warning(__FUNCTION__, $data);
                 exit();
         }
-        $sql = 'SELECT g.sn,g.balance,l.amount FROM oneshop_gcardsuselog l,oneshop_giftcards g WHERE l.giftcardssn=g.sn AND l.printed=0 AND l.ordersn=\'' . $this->_orderId . '\' AND l.jcdkhid=\'' . $this->_jcdhkId . '\' AND l.description=\'' . $description . '\'';
+        $sql = 'SELECT g.sn,g.balance,l.amount FROM oneshop_gcardsuselog l,oneshop_giftcards g WHERE l.giftcardssn=g.sn AND l.ordersn=\'' . $this->_orderId . '\' AND l.jcdkhid=\'' . $this->_jcdhkId . '\' AND l.description=\'' . $description . '\'';
         $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         if (!$result)
@@ -382,24 +360,10 @@ class giftcards extends DES
             $this->message(false, 1);
         }
 
-        switch ($data['type'])
+        foreach ($result as $value)
         {
-            case 1:
-                foreach ($result as $value)
-                {
-//                    $return_data[$value['SN']] = $value['BALANCE'] + $value['AMOUNT'];  //上期余额
-                    $return_data[$value['SN']] .= ' ' . $value['AMOUNT'];   //本次消费额
-                    $return_data[$value['SN']] .= ' ' . $value['BALANCE'];  //当前余额
-                }
-                break;
-
-            case 0:
-                foreach ($result as $value)
-                {
-                    $return_data[$value['SN']] = $value['AMOUNT'];   //本次退款额
-                    $return_data[$value['SN']] .= ' ' . $value['BALANCE'];  //当前余额
-                }
-                break;
+            $return_data[$value['SN']] = $value['AMOUNT'];   //本次金额
+            $return_data[$value['SN']] .= ' ' . $value['BALANCE'];  //当前余额
         }
 
         $this->message(true, json_encode($return_data));
@@ -460,6 +424,7 @@ class giftcards extends DES
 
     /**
      * @remark 生成支付记录
+     * @param array $data
      */
     protected function pay_log($data)
     {
@@ -487,6 +452,7 @@ class giftcards extends DES
 
     /**
      * @remark 生成退款记录
+     * @param array $data
      */
     protected function refund_log($data)
     {
@@ -516,7 +482,6 @@ class giftcards extends DES
      * @remark 状态信息
      * @param bool $state
      * @param string $data
-     * @return json
      */
     protected function message($state = false, $data = '')
     {
@@ -528,6 +493,7 @@ class giftcards extends DES
 
     /**
      * @remark 异常纪录
+     * @param array $data
      */
     protected function error_record($data)
     {
@@ -600,8 +566,8 @@ class giftcards extends DES
                 . "PosId:$this->_posId<br />"
                 . "WorkerId:$this->_workerId<br />"
                 . "Json Data:$data<br />"
-                . "<hr />"
-                . "This email sent automatically by the system.";
+                . '<hr />'
+                . 'This email sent automatically by the system.';
         $mail->send();
     }
 
