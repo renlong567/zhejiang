@@ -24,7 +24,7 @@ class giftcards extends DES
     protected $_dsn = 'oci:dbname=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.51.7)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=orcl)));charset=AL32UTF8;';
     protected $_user = 'yanfatest';
     protected $_passwd = 'yanfatest';
-    protected $db;
+    protected $_db;
     protected $_jcdhkId;    //基层店十位店号
     protected $_orderId;    //小票号
     protected $_posId;   //工作站号
@@ -34,7 +34,7 @@ class giftcards extends DES
     {
         try
         {
-            $this->db = new PDO($this->_dsn, $this->_user, $this->_passwd);
+            $this->_db = new PDO($this->_dsn, $this->_user, $this->_passwd);
         }
         catch (Exception $ex)
         {
@@ -42,13 +42,13 @@ class giftcards extends DES
             $this->message(false, '服务器连接失败,无法进行查询和支付');
         }
 
-        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->_db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         parent::DES('fc3ff98e');
     }
 
     public function __destruct()
     {
-        $this->db = NULL;
+        $this->_db = NULL;
     }
 
     public function index()
@@ -68,7 +68,7 @@ class giftcards extends DES
             $this->message(false, 2);
         }
         $orderid_check_sql = 'SELECT COUNT(*) FROM oneshop_gcardsuselog WHERE ordersn=\'' . $this->_orderId . '\' AND jcdkhid=\'' . $this->_jcdhkId . '\'';
-        $orderid_check_result = $this->db->query($orderid_check_sql)->fetchColumn();
+        $orderid_check_result = $this->_db->query($orderid_check_sql)->fetchColumn();
         if ($orderid_check_result)
         {
             $this->message(false, 3);
@@ -116,20 +116,20 @@ class giftcards extends DES
 
         try
         {
-            $this->db->beginTransaction();
+            $this->_db->beginTransaction();
             if ($sql_new)
             {
-                $this->db->exec($sql_new);
+                $this->_db->exec($sql_new);
             }
             if ($sql_old)
             {
-                $this->db->exec($sql_old);
+                $this->_db->exec($sql_old);
             }
-            $this->db->commit();
+            $this->_db->commit();
         }
         catch (Exception $ex)
         {
-            $this->db->rollBack();
+            $this->_db->rollBack();
             $checkout['ex'] = $ex->getMessage();
             $this->warning(__FUNCTION__, $checkout);
             $this->message(false, 1);   //支付失败
@@ -163,7 +163,7 @@ class giftcards extends DES
             $sql = 'SELECT sn,balance,invokestate,expiredtime FROM oneshop_giftcards WHERE lower(sn)=lower(\'' . $sn . '\') AND lower(pwd) LIKE lower(\'' . $key . '%\')';
         }
 
-        $result = $this->db->query($sql)->fetchObject();
+        $result = $this->_db->query($sql)->fetchObject();
 
         if (!$result)
         {
@@ -199,7 +199,7 @@ class giftcards extends DES
         }
 
         $check_sql = 'SELECT count(*),sum(amount),description FROM oneshop_gcardsuselog WHERE ordersn=\'' . $this->_orderId . '\' AND jcdkhid=\'' . $this->_jcdhkId . '\' GROUP BY description ORDER BY description ASC';
-        $check_rs = $this->db->query($check_sql)->fetchAll();
+        $check_rs = $this->_db->query($check_sql)->fetchAll();
 
         if (!$check_rs)
         {
@@ -216,7 +216,7 @@ class giftcards extends DES
         }
 
         $sel_sql = 'SELECT l.giftcardssn,g.payvalue-g.balance as refund_space FROM oneshop_gcardsuselog l,oneshop_giftcards g WHERE l.giftcardssn=g.sn AND g.balance<g.payvalue AND description=\'实体店刷卡消费\' AND l.ordersn=\'' . $this->_orderId . '\' AND jcdkhid=\'' . $this->_jcdhkId . '\'';
-        $result = $this->db->query($sel_sql)->fetchAll();
+        $result = $this->_db->query($sel_sql)->fetchAll();
 
         $total_refund = $data['amount'];
         $ok_arr = array();
@@ -254,13 +254,13 @@ class giftcards extends DES
 
         try
         {
-            $this->db->beginTransaction();
-            $this->db->exec($sql);
-            $this->db->commit();
+            $this->_db->beginTransaction();
+            $this->_db->exec($sql);
+            $this->_db->commit();
         }
         catch (Exception $ex)
         {
-            $this->db->rollBack();
+            $this->_db->rollBack();
             $ok_arr['ex'] = $ex->getMessage();
             $this->warning(__FUNCTION__, $ok_arr);
             $this->message(false, 1);    //退款失败
@@ -276,7 +276,7 @@ class giftcards extends DES
                 $sql .= ' sn=\'' . $k . '\' OR';
             }
             $sql = rtrim($sql, 'OR');
-            $new_balance = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+            $new_balance = $this->_db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($new_balance as $v)
             {
@@ -295,7 +295,7 @@ class giftcards extends DES
         $data = $this->transform();
 
         $sql = 'SELECT id,verify FROM oneshop_giftcards WHERE sn=\'' . $data['cid'] . '\'';
-        $result = $this->db->query($sql)->fetchObject();
+        $result = $this->_db->query($sql)->fetchObject();
 
         if (!$result->ID)
         {
@@ -312,13 +312,13 @@ class giftcards extends DES
                 $sql = 'UPDATE oneshop_giftcards SET verify=\'' . $vcode . '\' WHERE sn=\'' . $data['cid'] . '\'';
                 try
                 {
-                    $this->db->beginTransaction();
-                    $this->db->exec($sql);
-                    $this->db->commit();
+                    $this->_db->beginTransaction();
+                    $this->_db->exec($sql);
+                    $this->_db->commit();
                 }
                 catch (Exception $ex)
                 {
-                    $this->db->rollBack();
+                    $this->_db->rollBack();
                     $data['ex'] = $ex->getMessage();
                     $this->warning(__FUNCTION__, $data);
                     $this->message(false, 2);    //校验码生成失败,请重试
@@ -353,7 +353,7 @@ class giftcards extends DES
                 exit();
         }
         $sql = 'SELECT g.sn,g.balance,l.amount FROM oneshop_gcardsuselog l,oneshop_giftcards g WHERE l.giftcardssn=g.sn AND l.ordersn=\'' . $this->_orderId . '\' AND l.jcdkhid=\'' . $this->_jcdhkId . '\' AND l.description=\'' . $description . '\'';
-        $result = $this->db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->_db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
         if (!$result)
         {
@@ -396,7 +396,7 @@ class giftcards extends DES
         }
 
         $sql = 'SELECT sn,balance,expiredtime FROM oneshop_giftcards WHERE (' . $sn_where . ') AND balance>0';
-        $gcardsinfo = $this->db->query($sql)->fetchAll();
+        $gcardsinfo = $this->_db->query($sql)->fetchAll();
 
         $result = array('new' => array(), 'old' => array());
         foreach ($gcardsinfo as $value)
@@ -438,13 +438,13 @@ class giftcards extends DES
 
         try
         {
-            $this->db->beginTransaction();
-            $this->db->exec($sql);
-            $this->db->commit();
+            $this->_db->beginTransaction();
+            $this->_db->exec($sql);
+            $this->_db->commit();
         }
         catch (Exception $ex)
         {
-            $this->db->rollBack();
+            $this->_db->rollBack();
             $data['ex'] = $ex->getMessage();
             $this->warning(__FUNCTION__, $data);
         }
@@ -466,13 +466,13 @@ class giftcards extends DES
 
         try
         {
-            $this->db->beginTransaction();
-            $this->db->exec($sql);
-            $this->db->commit();
+            $this->_db->beginTransaction();
+            $this->_db->exec($sql);
+            $this->_db->commit();
         }
         catch (Exception $ex)
         {
-            $this->db->rollBack();
+            $this->_db->rollBack();
             $data['ex'] = $ex->getMessage();
             $this->warning(__FUNCTION__, $data);
         }
@@ -502,13 +502,13 @@ class giftcards extends DES
 
         try
         {
-            $this->db->beginTransaction();
-            $this->db->exec($sql);
-            $this->db->commit();
+            $this->_db->beginTransaction();
+            $this->_db->exec($sql);
+            $this->_db->commit();
         }
         catch (Exception $ex)
         {
-            $this->db->rollBack();
+            $this->_db->rollBack();
             $data['ex'] = $ex->getMessage();
             $this->warning(__FUNCTION__, $data);
         }
@@ -527,7 +527,6 @@ class giftcards extends DES
         {
             $this->message(false);
         }
-        $result = htmlspecialchars($result, ENT_QUOTES);
         $this->filter_data($result);
 
         $this->_orderId = isset($result['orderid']) ? trim($result['orderid']) : '';
