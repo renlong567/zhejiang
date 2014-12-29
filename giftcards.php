@@ -527,11 +527,14 @@ class giftcards extends DES
         {
             $this->message(false);
         }
+        $result = htmlspecialchars($result, ENT_QUOTES);
         $this->filter_data($result);
+
         $this->_orderId = isset($result['orderid']) ? trim($result['orderid']) : '';
         $this->_jcdhkId = isset($result['jcdkhid']) ? trim($result['jcdkhid']) : '';
         $this->_posId = isset($result['posid']) ? trim($result['posid']) : '';
         $this->_workerId = isset($result['workerid']) ? trim($result['workerid']) : '';
+
         return $result;
     }
 
