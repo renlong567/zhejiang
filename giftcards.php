@@ -568,6 +568,7 @@ class giftcards extends DES
 
     /**
      * @remark 加密算法
+     * @param string $data
      * @return string
      */
     protected function encode($data = '')
@@ -578,6 +579,7 @@ class giftcards extends DES
 
     /**
      * @remark 解密算法
+     * @param string $data
      * @return json
      */
     protected function decode($data = '')
