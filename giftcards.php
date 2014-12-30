@@ -9,21 +9,14 @@
 class giftcards extends DES
 {
 
-//    protected $_dsn = 'oci:dbname=(DESCRIPTION =
-//                            (ADDRESS_LIST =
-//                              (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.51.21)(PORT = 1521))
-//                            )
-//                            (CONNECT_DATA =
-//                              (SERVICE_NAME = edidb)
-//                            )
-//                        )';
+    protected $_dsn = 'oci:dbname=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.51.21)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=edidb)));charset=AL32UTF8;';
 //    protected $_dsn = 'oci:dbname=10.0.0.59:1521/edidb;charset=UTF8';
-//    protected $user = 'testdb';
-//    protected $passwd = 'testdb';
+    protected $_user = 'testdb';
+    protected $_passwd = 'testdb';
 //    protected $_dsn = 'oci:dbname=10.0.0.41:1521/orcl;charset=UTF8'; //外网测试
-    protected $_dsn = 'oci:dbname=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.51.7)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=orcl)));charset=AL32UTF8;';
-    protected $_user = 'yanfatest';
-    protected $_passwd = 'yanfatest';
+//    protected $_dsn = 'oci:dbname=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.51.7)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=orcl)));charset=AL32UTF8;';
+//    protected $_user = 'yanfatest';
+//    protected $_passwd = 'yanfatest';
     protected $_db;
     protected $_jcdhkId;    //基层店十位店号
     protected $_orderId;    //小票号
@@ -159,7 +152,7 @@ class giftcards extends DES
         else
         {
             $key = substr($data['cid'], -2);
-            $sn = rtrim($data['cid'], $key);
+            $sn = substr($data['cid'], 0, strlen($data['cid']) - 2);
             $sql = 'SELECT sn,balance,invokestate,expiredtime FROM oneshop_giftcards WHERE lower(sn)=lower(\'' . $sn . '\') AND lower(pwd) LIKE lower(\'' . $key . '%\')';
         }
 
@@ -374,7 +367,7 @@ class giftcards extends DES
      * @param array $data
      * @return array
      */
-    protected function checkout($data)
+    protected function checkout($data = array())
     {
         $sn_where = '';
         foreach ($data['cid'] as $sn => $value)
@@ -426,7 +419,7 @@ class giftcards extends DES
      * @remark 生成支付记录
      * @param array $data
      */
-    protected function pay_log($data)
+    protected function pay_log($data = array())
     {
         $time = time();
         $sql = 'INSERT ALL ';
@@ -454,7 +447,7 @@ class giftcards extends DES
      * @remark 生成退款记录
      * @param array $data
      */
-    protected function refund_log($data)
+    protected function refund_log($data = array())
     {
         $time = time();
         $sql = 'INSERT ALL ';
@@ -495,7 +488,7 @@ class giftcards extends DES
      * @remark 异常纪录
      * @param array $data
      */
-    protected function error_record($data)
+    protected function error_record($data = array())
     {
         $time = time();
         $sql = "INSERT INTO oneshop_exce_log (addtime,logtype,jcdkhid,ordersn,amount,description,posid,workerid) VALUES ($time,0,'$this->_jcdhkId','$this->_orderId','$data[total_refund]','退款异常','$this->_posId','$this->_workerId')";
@@ -577,7 +570,7 @@ class giftcards extends DES
      * @remark 加密算法
      * @return string
      */
-    protected function encode($data)
+    protected function encode($data = '')
     {
         $result = $this->encrypt($data);
         return $result;
@@ -587,7 +580,7 @@ class giftcards extends DES
      * @remark 解密算法
      * @return json
      */
-    protected function decode($data)
+    protected function decode($data = '')
     {
         $result = $this->decrypt($data);
         return $result;
@@ -597,7 +590,7 @@ class giftcards extends DES
      * @remark 过滤数据
      * @param array $data
      */
-    protected function filter_data($data)
+    protected function filter_data($data = array())
     {
         $cut = true;
 
