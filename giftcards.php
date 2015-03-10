@@ -36,7 +36,7 @@ class giftcards extends DES
         }
 
         $this->_db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        parent::DES('aaabbs');
+        parent::DES('fc3ff98e');
     }
 
     public function __destruct()
@@ -128,22 +128,7 @@ class giftcards extends DES
             $this->message(false, 1);   //支付失败
         }
 
-//        $log_info = array_merge($checkout['new'], $checkout['old']);  //该函数会重置数字键名
-        $log_info = array();
-        if($checkout['new'])
-        {
-            foreach($checkout['new'] as $k => $v)
-            {
-                $log_info[$k] = $v;
-            }
-        }
-        if($checkout['old'])
-        {
-            foreach($checkout['old'] as $k => $v)
-            {
-                $log_info[$k] = $v;
-            }
-        }
+        $log_info = array_merge($checkout['new'], $checkout['old']);
         $this->pay_log($log_info);
         $this->message(true, json_encode($log_info));    //支付成功
     }
@@ -565,8 +550,8 @@ class giftcards extends DES
         $mail->From = 'admin@iyunshu.com';
         $mail->FromName = '云书网读书卡系统';
         $mail->addAddress('51109638@qq.com');
-        $mail->addAddress('541561049@qq.com');
-        $mail->addAddress('393802411@qq.com');
+//        $mail->addAddress('541561049@qq.com');
+//        $mail->addAddress('393802411@qq.com');
         $mail->WordWrap = 70;
         $mail->isHTML(true);
         $mail->Subject = $code . ' Fail Warning';
